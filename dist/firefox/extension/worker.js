@@ -1747,6 +1747,10 @@ async function handleChatMessage(message, sender) {
             
             // Authentication failed - clear tokens
             chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn']);
+            sendChatErrorResponse(sender.tab.id, "Session expired. Please log in again.");
+            return;
+        }
+
         // Retry once on HTTP 429 rate limit with backoff
         if (!response.ok && response.status === 429) {
             console.log('[AI Worker] Rate limited (429). Retrying after 2 seconds...');
