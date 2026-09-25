@@ -1672,7 +1672,20 @@ Respond with ONLY the ${request.programmingLanguage} code:`;
     }
 });
 
+async function getTargetTabId(sender) {
+    if (sender && sender.tab && typeof sender.tab.id === 'number') {
+        return sender.tab.id;
+    }
+    try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        return tabs && tabs[0] ? tabs[0].id : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 async function handleChatMessage(message, sender) {
+    const targetTabId = await getTargetTabId(sender);
     try {
         // Check if user has custom API configured
         const customAPIConfig = await getCustomAPIConfig();
@@ -1686,9 +1699,9 @@ async function handleChatMessage(message, sender) {
             const result = await queryCustomAPI(chatPrompt, false, false, customAPIConfig);
             
             if (typeof result === 'string') {
-                sendChatResponse(sender.tab.id, result);
+                sendChatResponse(targetTabId, result);
             } else {
-                sendChatErrorResponse(sender.tab.id, result.error || 'Failed to get response from custom API');
+                sendChatErrorResponse(targetTabId, result.error || 'Failed to get response from custom API');
             }
             return;
         }
@@ -1702,7 +1715,7 @@ async function handleChatMessage(message, sender) {
 
         // If not logged in and no custom API configured, require custom API
         if (!accessToken || !refreshToken) {
-            sendChatErrorResponse(sender.tab.id, "Please configure your custom API key in Settings or login with Pro to use our proxy-server.");
+            sendChatErrorResponse(targetTabId, "Please configure your custom API key in Settings or login with Pro to use our proxy-server.");
             return;
         }
 
@@ -1738,7 +1751,7 @@ async function handleChatMessage(message, sender) {
                 const errorData = await response.json();
                 if (errorData.message && errorData.message.includes('subscription')) {
                     // This is a Pro subscription issue, not an auth issue
-                    sendChatErrorResponse(sender.tab.id, "Your Pro subscription is required or has expired. Please upgrade or renew.");
+                    sendChatErrorResponse(targetTabId, "Your Pro subscription is required or has expired. Please upgrade or renew.");
                     return;
                 }
             } catch (e) {
@@ -1747,7 +1760,7 @@ async function handleChatMessage(message, sender) {
             
             // Authentication failed - clear tokens
             chrome.storage.local.remove(['accessToken', 'refreshToken', 'loggedIn']);
-            sendChatErrorResponse(sender.tab.id, "Session expired. Please log in again.");
+            sendChatErrorResponse(targetTabId, "Session expired. Please log in again.");
             return;
         }
 
@@ -1813,7 +1826,7 @@ async function handleChatMessage(message, sender) {
             }
             
             // Send error message with proper error role
-            sendChatErrorResponse(sender.tab.id, errorMessage);
+            sendChatErrorResponse(targetTabId, errorMessage);
             return;
         }
 
@@ -1831,16 +1844,14 @@ async function handleChatMessage(message, sender) {
             const content = typeof data?.content === 'string' ? data.content : '';
 
             if (content) {
-                sendChatResponse(sender.tab.id, content);
+                sendChatResponse(targetTabId, content);
             } else {
-                sendChatErrorResponse(sender.tab.id, 'No response received. Please try again.');
+                sendChatErrorResponse(targetTabId, 'No response received. Please try again.');
             }
             return;
         }
 
         // Read the plain-text stream produced by pipeTextStreamToResponse.
-        // The server sends raw text deltas; each read() call yields one or more
-        // text chunks that are concatenated directly into the response.
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let accumulatedText = '';
@@ -1855,12 +1866,14 @@ async function handleChatMessage(message, sender) {
                 accumulatedText += chunk;
                 receivedChunks = true;
                 // Send incremental streaming update to the chatbot UI
-                chrome.tabs.sendMessage(sender.tab.id, {
-                    action: "updateChatHistory",
-                    role: "assistant",
-                    content: accumulatedText,
-                    isStreaming: true
-                });
+                if (targetTabId) {
+                    chrome.tabs.sendMessage(targetTabId, {
+                        action: "updateChatHistory",
+                        role: "assistant",
+                        content: accumulatedText,
+                        isStreaming: true
+                    }).catch(() => {});
+                }
             }
         }
 
@@ -1871,11 +1884,11 @@ async function handleChatMessage(message, sender) {
             receivedChunks = true;
         }
 
-        // Finalise: send full accumulated text (isStreaming unset → chatbot.js closes the streaming div)
+        // Finalise: send full accumulated text
         if (receivedChunks) {
-            sendChatResponse(sender.tab.id, accumulatedText);
+            sendChatResponse(targetTabId, accumulatedText);
         } else {
-            sendChatErrorResponse(sender.tab.id, "No response received. Please try again.");
+            sendChatErrorResponse(targetTabId, "No response received. Please try again.");
         }
     } catch (error) {
         console.error("Chat processing error:", error);
@@ -1890,26 +1903,36 @@ async function handleChatMessage(message, sender) {
             errorMessage = "Sorry, I encountered an unexpected error. Please try again or log in again if the issue persists.";
         }
         
-        sendChatErrorResponse(sender.tab.id, errorMessage);
+        sendChatErrorResponse(targetTabId, errorMessage);
     }
 }
 
-// Helper function to send chat responses
-function sendChatResponse(tabId, content) {
+// Helper function to send chat responses safely
+async function sendChatResponse(targetTab, content) {
+    let tabId = typeof targetTab === 'number' ? targetTab : (targetTab?.id || null);
+    if (!tabId) {
+        tabId = await getTargetTabId(null);
+    }
+    if (!tabId) return;
     chrome.tabs.sendMessage(tabId, {
         action: "updateChatHistory",
         role: "assistant",
         content: content
-    });
+    }).catch(() => {});
 }
 
-// Helper function to send chat error responses (prevents errors from being added to context)
-function sendChatErrorResponse(tabId, content) {
+// Helper function to send chat error responses safely
+async function sendChatErrorResponse(targetTab, content) {
+    let tabId = typeof targetTab === 'number' ? targetTab : (targetTab?.id || null);
+    if (!tabId) {
+        tabId = await getTargetTabId(null);
+    }
+    if (!tabId) return;
     chrome.tabs.sendMessage(tabId, {
         action: "updateChatHistory",
         role: "error",
         content: content
-    });
+    }).catch(() => {});
 }
 
 // ========================================
