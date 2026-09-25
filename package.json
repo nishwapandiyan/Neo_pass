@@ -1,0 +1,36 @@
+{
+  "name": "neopass",
+  "version": "1.5.5",
+  "description": "NeoPass — Free browser extension for students on Iamneo, HackerRank, NPTEL and other exam portals.",
+  "private": true,
+  "scripts": {
+    "build:chromium": "powershell -ExecutionPolicy Bypass -File .\\scripts\\build-chromium-release.ps1",
+    "build:firefox": "powershell -ExecutionPolicy Bypass -File .\\scripts\\build-firefox-release.ps1",
+    "build": "npm run build:chromium && npm run build:firefox",
+    "lint:json": "node -e \"['manifest.json','manifest.firefox.json','metadata.json','data/nptel.json','data/inject/mock_code/mock_manifest.json','data/inject/mock_code/rules.json'].forEach(f=>{try{JSON.parse(require('fs').readFileSync(f,'utf8'));console.log('OK:',f);}catch(e){console.error('FAIL:',f,e.message);process.exit(1);}})\"",
+    "validate": "npm run lint:json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Max-Eee/NeoPass.git"
+  },
+  "keywords": [
+    "chrome-extension",
+    "browser-extension",
+    "nptel",
+    "iamneo",
+    "examly",
+    "neoexamshield",
+    "neopass"
+  ],
+  "author": "Max-Eee (NeoPass)",
+  "license": "MIT",
+  "homepage": "https://neopass.space",
+  "bugs": {
+    "url": "https://github.com/Max-Eee/NeoPass/issues",
+    "email": "support@neopass.space"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoPass</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090a0f;
+            --card-bg: rgba(18, 20, 29, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-border-hover: rgba(139, 92, 246, 0.3);
+            --input-bg: rgba(10, 12, 18, 0.8);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --accent-primary: #6366f1;
+            --accent-secondary: #a855f7;
+            --accent-pink: #ec4899;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --text-subtle: #6b7280;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            width: 380px;
+            max-width: 380px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin: 0;
+            padding: 16px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* Custom Ambient Glow Backgrounds */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -60px;
+            right: -60px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -60px;
+            left: -60px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.4);
+        }
+
+        .flex {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .gap-4 {
+            gap: 14px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Header Branding */
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 20px;
+            margin-bottom: 6px;
+        }
+
+        .brand-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .brand-badge .brand-tag {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #818cf8;
+            text-transform: uppercase;
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* Status & Toast Notifications */
+        .status-container {
+            width: 100%;
+            margin-bottom: 4px;
+        }
+
+        #statusMessage, #error {
+            font-size: 0.75rem;
+            text-align: center;
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            transition: all 0.3s ease;
+        }
+
+        .glow {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a5b4fc;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        /* Tabs Container */
+        .tabs-container {
+            width: 100%;
+        }
+
+        .tab-nav {
+            display: flex;
+            background: rgba(15, 17, 26, 0.8);
+            padding: 3px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 14px;
+            gap: 3px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 8px 14px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab-button:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-button.active {
+            background: var(--accent-gradient);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+        }
+
+        .tab-content {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            transition: border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: var(--card-border-hover);
+        }
+
+        /* Card Section Header */
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .api-config-header {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .api-config-header::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-primary);
+        }
+
+        .toggle-info {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            padding: 8px 10px;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Toggle Container & Switch */
+        .toggle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .toggle-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: rgba(255, 255, 255, 0.12);
+            transition: all 0.3s ease;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background: #ffffff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        input:checked + .toggle-slider {
+            background: var(--accent-gradient);
+            border-color: transparent;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Form Inputs */
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label.block {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            letter-spacing: 0.01em;
+        }
+
+        .glow-input {
+            width: 100%;
+            box-sizing: border-box;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: var(--radius-sm);
+            padding: 8px 11px;
+            font-size: 0.78rem;
+            font-family: inherit;
+            color: var(--text-main);
+            transition: all 0.25s ease;
+        }
+
+        .glow-input::placeholder {
+            color: #4b5563;
+        }
+
+        .glow-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+            background-color: rgba(15, 18, 28, 0.9);
+        }
+
+        select.glow-input {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%3Ca5b4fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        select.glow-input option {
+            background-color: #11131f;
+            color: #f3f4f6;
+            padding: 8px;
+        }
+
+        /* Buttons */
+        .glow-button {
+            background: var(--accent-gradient);
+            color: #ffffff;
+            padding: 9px 16px;
+            border-radius: var(--radius-sm);
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .glow-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(168, 85, 247, 0.4);
+            filter: brightness(1.08);
+        }
+
+        .glow-button:active {
+            transform: translateY(0);
+        }
+
+        .glow-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .opacity-button {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .opacity-button:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: scale(1.03);
+        }
+
+        .button-container {
+            margin-top: 6px;
+        }
+
+        .uninstall-button {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.08);
+            color: #f87171;
+            padding: 9px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .uninstall-button:hover {
+            background: rgba(239, 68, 68, 0.18);
+            border-color: rgba(239, 68, 68, 0.45);
+            color: #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Shortcuts Styling */
+        .shortcuts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .shortcuts-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .shortcuts-category-header {
+            padding: 7px 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .shortcuts-category-header[data-category="iamneo"] span {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .shortcuts-category-header[data-category="universal"] span {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .shortcuts-category-header[data-category="hackerrank"] span {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .shortcuts-category-header[data-category="nptel"] span {
+            background: linear-gradient(135deg, #f43f5e, #fb7185);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .shortcuts-list {
+            list-style: none;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .shortcuts-list li {
+            font-size: 0.74rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+        }
+
+        .shortcut-key {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.07);
+            color: #e0e7ff;
+            padding: 2px 7px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            margin-right: 8px;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+        }
+
+        .shortcut-description {
+            font-size: 0.73rem;
+            color: #d1d5db;
+        }
+
+        .shortcut-item-with-requirement {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            width: 100%;
+        }
+
+        .shortcut-main-line {
+            display: flex;
+            align-items: center;
+        }
+
+        .text-selection-required {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #fbbf24;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.25);
+            display: inline-block;
+            align-self: flex-start;
+            margin-left: 2px;
+            letter-spacing: 0.04em;
+        }
+
+        .mb-4 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex">
+        <!-- Status Notification Banner -->
+        <div class="status-container">
+            <div id="statusMessage" class="hidden glow"></div>
+        </div>
+
+        <!-- GitHub Authentication Gateway (Shown when NOT connected) -->
+        <div id="githubAuthGateway" class="hidden">
+            <div class="welcome-header" style="margin-bottom: 16px;">
+                <div class="brand-badge">
+                    <span class="dot" style="background: #6366f1; box-shadow: 0 0 8px #6366f1;"></span>
+                    <span class="brand-tag" style="color: #a5b4fc;">GitHub Login Required</span>
+                </div>
+                <div class="brand-title" style="font-size: 1.5rem; margin-top: 4px;">NeoPass</div>
+                <div class="brand-subtitle">AI Exam & Learning Companion</div>
+            </div>
+
+            <div class="glass-card mb-4" style="text-align: center; padding: 20px 16px;">
+                <div id="githubAuthError" class="error-message hidden" style="margin-bottom: 14px;"></div>
+                
+                <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" style="color: #ffffff;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    </div>
+                </div>
+
+                <div style="font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; color: #ffffff; margin-bottom: 4px;">
+                    GitHub OTP Verification
+                </div>
+
+                <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 14px;">
+                    Enter your GitHub Email or Username to receive a 6-digit OTP verification code.
+                </div>
+
+                <!-- STEP 1: Enter GitHub Email -->
+                <div id="githubEmailStep">
+                    <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+                        <label for="githubEmailInput" class="block">GitHub Email or Username:</label>
+                        <input type="text" id="githubEmailInput" class="glow-input" placeholder="user@example.com or @username">
+                    </div>
+
+                    <button id="sendOtpBtn" class="glow-button" style="width: 100%; padding: 11px; font-size: 0.84rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        Send OTP Verification Code
+                    </button>
+                </div>
+
+                <!-- STEP 2: Enter 6-Digit OTP (Initially Hidden) -->
+                <div id="githubOtpStep" class="hidden">
+                    <div style="font-size: 0.72rem; color: #a5b4fc; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                        ✉️ OTP Sent! Check your email or notification for code.
+                    </div>
+
+                    <div class="form-group" style="text-align: left; margin-bottom: 14px;">
+                        <label for="githubOtpInput" class="block">Enter 6-Digit Verification OTP:</label>
+                        <input type="text" id="githubOtpInput" class="glow-input" placeholder="123456" maxlength="6" style="font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; text-align: center; letter-spacing: 0.3em;">
+                    </div>
+
+                    <button id="verifyOtpBtn" class="glow-button" style="width: 100%; padding: 11px; font-size: 0.84rem; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Verify OTP & Login
+                    </button>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; margin-top: 8px;">
+                        <a id="resendOtpBtn" href="#" style="color: var(--accent-primary); text-decoration: underline;">Resend OTP Code</a>
+                        <a id="changeEmailBtn" href="#" style="color: var(--text-subtle); text-decoration: underline;">Change Email</a>
+                    </div>
+                </div>
+
+                <div style="margin-top: 14px;">
+                    <a id="toggleTokenInputLink" href="#" style="font-size: 0.68rem; color: var(--text-subtle); text-decoration: underline;">Or connect via access token</a>
+                </div>
+
+                <div id="manualTokenDiv" class="hidden" style="margin-top: 12px; text-align: left;">
+                    <div class="form-group">
+                        <label for="githubTokenInput" class="block">GitHub Access Token:</label>
+                        <input type="password" id="githubTokenInput" class="glow-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                    </div>
+                    <button id="connectGithubTokenBtn" class="glow-button" style="width: 100%; padding: 7px; font-size: 0.75rem; background: rgba(255, 255, 255, 0.1); box-shadow: none;">
+                        Connect with Token
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content with tabs (Shown when GitHub connected) -->
+        <div id="mainContent" class="hidden">
+            <!-- Header Branding -->
+            <div class="welcome-header">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 6px;">
+                    <div class="brand-badge" style="margin-bottom: 0;">
+                        <span class="dot"></span>
+                        <span class="brand-tag">v1.5.5 Active</span>
+                    </div>
+
+                    <!-- GitHub Profile Pill -->
+                    <div id="githubProfilePill" style="display: flex; align-items: center; gap: 6px; padding: 3px 8px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px;">
+                        <img id="githubAvatarHeader" src="" alt="GitHub User" style="width: 16px; height: 16px; border-radius: 50%;">
+                        <span id="githubUserHeader" style="font-size: 0.68rem; font-weight: 600; color: var(--text-main);">@user</span>
+                    </div>
+                </div>
+                <div class="brand-title">NeoPass</div>
+                <div class="brand-subtitle">AI Exam & Learning Companion</div>
+            </div>
+            
+            <!-- Segmented Tab Control Navigation -->
+            <div class="tabs-container">
+                <div class="tab-nav">
+                    <button class="tab-button active" data-tab="settings-tab">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Settings
+                    </button>
+                    <button class="tab-button" data-tab="shortcuts-tab">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zM6 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3z"></path></svg>
+                        Shortcuts
+                    </button>
+                </div>
+                
+                <!-- Tab Contents -->
+                <!-- Shortcuts Tab -->
+                <div id="shortcuts-tab" class="tab-content">
+                    <div class="shortcuts-container">
+                        <div class="shortcuts-section">
+                            <div class="shortcuts-category-header" data-category="iamneo">
+                                <span>Examly / Iamneo</span>
+                            </div>
+                            <ul class="shortcuts-list">
+                                <li>
+                                    <span class="shortcut-key">Option + T</span>
+                                    <span class="shortcut-description">Type Neo Coding Answers</span>
+                                </li>
+                                <li>
+                                    <span class="shortcut-key">Option + A</span>
+                                    <span class="shortcut-description">Search Neo Answers Using AI</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="shortcuts-section">
+                            <div class="shortcuts-category-header" data-category="universal">
+                                <span>Universal Shortcuts</span>
+                            </div>
+                            <ul class="shortcuts-list">
+                                <li>
+                                    <div class="shortcut-item-with-requirement">
+                                        <div class="shortcut-main-line">
+                                            <span class="shortcut-key">Control + Period [.]</span>
+                                            <span class="shortcut-description">Search Answers Using AI</span>
+                                        </div>
+                                        <span class="text-selection-required">SELECT QUESTION FIRST</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="shortcut-item-with-requirement">
+                                        <div class="shortcut-main-line">
+                                            <span class="shortcut-key">Control + Comma [,]</span>
+                                            <span class="shortcut-description">Solve MCQs Using AI</span>
+                                        </div>
+                                        <span class="text-selection-required">SELECT QUESTION FIRST</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="shortcut-key">Option + C</span>
+                                    <span class="shortcut-description">Toggle Chatbot Overlay</span>
+                                </li>
+                                <li>
+                                    <span class="shortcut-key">Option + P</span>
+                                    <span class="shortcut-description">Paste Using Drag and Drop</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="shortcuts-section">
+                            <div class="shortcuts-category-header" data-category="hackerrank">
+                                <span>HackerRank</span>
+                            </div>
+                            <ul class="shortcuts-list">
+                                <li>
+                                    <span class="shortcut-key">Option + K</span>
+                                    <span class="shortcut-description">Solve HackerRank Questions [BETA]</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="shortcuts-section">
+                            <div class="shortcuts-category-header" data-category="nptel">
+                                <span>NPTEL</span>
+                            </div>
+                            <ul class="shortcuts-list">
+                                <li>
+                                    <div class="shortcut-item-with-requirement">
+                                        <div class="shortcut-main-line">
+                                            <span class="shortcut-key">Option + Comma [,]</span>
+                                            <span class="shortcut-description">Solve NPTEL MCQs</span>
+                                        </div>
+                                        <span class="text-selection-required">SELECT QUESTION FIRST</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings Tab -->
+                <div id="settings-tab" class="tab-content active">
+                    <!-- GitHub Account Card -->
+                    <div class="glass-card mb-4">
+                        <div class="card-header" style="margin-bottom: 8px;">
+                            <div class="api-config-header" style="margin-bottom: 0;">
+                                GitHub Account
+                            </div>
+                            <button id="disconnectGithubBtn" class="opacity-button" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">
+                                Disconnect
+                            </button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0;">
+                            <img id="githubAvatarCard" src="" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--accent-primary);">
+                            <div style="display: flex; flex-direction: column;">
+                                <span id="githubNameCard" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">GitHub User</span>
+                                <span id="githubLoginCard" style="font-size: 0.68rem; color: var(--text-subtle);">@username</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom API Configuration Card -->
+                    <div class="glass-card mb-4">
+                        <div class="api-config-header mb-4">
+                            Custom AI Configuration
+                        </div>
+                        <div id="customAPIInfo" class="toggle-info" style="margin-bottom: 12px;">
+                            Enter your own API key to use NeoPass features
+                        </div>
+                        
+                        <!-- Hidden toggle container (JS looks for this) -->
+                        <div id="customAPIToggleContainer" class="toggle-header hidden" style="margin-bottom: 12px;">
+                            <span class="toggle-label">Use Custom API</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="useCustomAPI">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <!-- API Configuration Form -->
+                        <div id="customAPIForm">
+                            <div class="form-group">
+                                <label for="aiProvider" class="block">AI Provider:</label>
+                                <select id="aiProvider" class="glow-input">
+                                    <option value="openai">OpenAI (GPT-4o)</option>
+                                    <option value="anthropic">Claude (Anthropic)</option>
+                                    <option value="google">Google Gemini</option>
+                                    <option value="deepseek">DeepSeek</option>
+                                    <option value="custom">Custom Provider Endpoint</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group hidden" id="customEndpointDiv">
+                                <label for="customEndpoint" class="block">Custom API Endpoint:</label>
+                                <input type="text" id="customEndpoint" class="glow-input" placeholder="https://api.example.com/v1/chat">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="apiKey" class="block">API Key:</label>
+                                <input type="password" id="apiKey" class="glow-input" placeholder="Enter your API key">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="modelName" class="block">Model Name:</label>
+                                <input type="text" id="modelName" class="glow-input" placeholder="e.g., gpt-4o, claude-3-5-sonnet">
+                                <div style="font-size: 0.65rem; color: var(--text-subtle); margin-top: 3px;">Leave empty for provider default model</div>
+                            </div>
+                            
+                            <div style="margin-top: 14px;">
+                                <button id="testAPIConfig" class="glow-button" style="width: 100%;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                                    Test Connection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Toast Opacity Card -->
+                    <div class="glass-card mb-4">
+                        <div class="toggle-header">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span class="toggle-label">Notification Toast Opacity</span>
+                                <div class="toggle-info" style="border: none; padding: 0; background: transparent; font-size: 0.68rem; color: var(--text-subtle);">
+                                    Shortcut: Option + O
+                                </div>
+                            </div>
+                            <button id="toastOpacityToggle" class="opacity-button">
+                                <span id="opacityLevel">High</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Uninstall Button -->
+                    <div class="button-container">
+                        <button id="uninstallButton" class="uninstall-button">
+                            Uninstall Extension
+                        </button>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- Error Message Notification -->
+        <div id="error" class="error-message hidden" style="margin-top: 8px;"></div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,183 @@
+{
+  "manifest_version": 3,
+  "name": "NeoExamShield",
+  "version": "1.5.5",
+  "version_name": "1.5.5",
+  "description": "To prevent malpractice, identifies and blocks third-party browser extensions during tests on the Iamneo portal.",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "neopass@neopass.tech",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+
+  "background": {
+    "scripts": ["worker.js"],
+    "type": "module"
+  },
+
+  "web_accessible_resources": [{
+    "resources": [
+      "devtools.js",
+      "data/inject/anti-anti-debug.js",
+      "data/inject/copyOverride.js",
+      "data/inject/customPaste.js",
+      "data/inject/mock_code.js",
+      "data/inject/exam.js",
+      "data/lib/showdown.min.js",
+      "metadata.json",
+      "contentScript.js",
+      "manifest.json",
+      "data/inject/mock_code/mock_manifest.json",
+      "data/inject/mock_code/minifiedBackground.js",
+      "data/inject/mock_code/minifiedContent-script.js",
+      "data/inject/mock_code/rules.json"
+    ],
+    "matches": ["http://*/*", "https://*/*"]
+  }],
+
+  "permissions": [
+    "management",
+    "tabs",
+    "activeTab",
+    "contextMenus",
+    "clipboardWrite",
+    "clipboardRead",
+    "storage",
+    "scripting",
+    "downloads",
+    "declarativeNetRequest",
+    "alarms",
+    "webRequest",
+    "identity"
+  ],
+
+  "host_permissions": [
+    "*://*/*"
+  ],
+
+  "externally_connectable": {
+    "matches": ["http://*/*", "https://*/*"]
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*/*",
+        "http://*/*"
+      ],
+      "js": [
+        "data/inject/copyOverride.js",
+        "data/inject/customPaste.js",
+        "data/inject/rightclickmenu.js",
+        "data/inject/isolated.js",
+        "data/inject/content.js",
+        "data/inject/main.js",
+        "data/inject/chatbot.js",
+        "data/lib/showdown.min.js",
+        "contentScript.js"
+      ],
+      "exclude_matches": [
+        "*://*.discord.com/*",
+        "*://*.figma.com/*"
+      ]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "all_frames": true,
+      "run_at": "document_start",
+      "js": ["devtools.js"]
+    },
+    {
+      "js": ["data/inject/anti-anti-debug.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "matchOriginAsFallback": true,
+      "world": "MAIN",
+      "matches": ["<all_urls>"]
+    },
+    {
+      "js": ["data/inject/screenshare-bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "matchOriginAsFallback": true,
+      "matches": [
+        "<all_urls>",
+        "https://*.examly.io/*",
+        "https://*.vit.ac.in/*",
+        "https://app.codility.com/*"
+      ],
+      "exclude_matches": [
+        "https://*.examly.io/result*",
+        "https://*.vit.ac.in/result"
+      ]
+    },
+    {
+      "js": ["data/inject/screenshare.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "matchOriginAsFallback": true,
+      "world": "MAIN",
+      "matches": [
+        "<all_urls>",
+        "https://*.examly.io/*",
+        "https://*.vit.ac.in/*",
+        "https://app.codility.com/*"
+      ],
+      "exclude_matches": [
+        "https://*.examly.io/result*",
+        "https://*.vit.ac.in/result"
+      ]
+    }
+  ],
+
+  "commands": {
+    "search-mcq": {
+      "suggested_key": {
+        "default": "Ctrl+Comma",
+        "mac": "MacCtrl+Comma"
+      },
+      "description": "Solve MCQs"
+    },
+    "search": {
+      "suggested_key": {
+        "default": "Ctrl+Period",
+        "mac": "MacCtrl+Period"
+      },
+      "description": "Solve MCQs"
+    },
+    "nptel": {
+      "suggested_key": {
+        "default": "Alt+Comma",
+        "mac": "Alt+Comma"
+      },
+      "description": "nptel"
+    },
+    "customPaste": {
+      "suggested_key": {
+        "default": "Alt+P",
+        "mac": "Alt+P"
+      },
+      "description": "Paste using drag-and-drop when blocked"
+    }
+  },
+
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  }
+}
